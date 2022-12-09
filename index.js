@@ -16,19 +16,21 @@ ${Nav(store.Links)}
 ${Main(state)}
 ${Footer()}
 `;
+  afterRender();
   router.updatePageLinks();
 }
-
-// add menu toggle to bars icon in nav bar
-// document.querySelector(".fa-bars").addEventListener("click", () => {
-//   document.querySelector("nav > ul").classList.toggle("hidden--mobile");
-// });
+function afterRender() {
+  // add menu toggle to bars icon in nav bar
+  document.querySelector(".fa-bars").addEventListener("click", () => {
+    document.querySelector("nav > ul").classList.toggle("hidden--mobile");
+  });
+}
 
 router.hooks({
   before: (done, params) => {
     const view =
-      params && params.hasOwnProperty("page")
-        ? capitalize(params.page)
+      params && params.data && params.data.view
+        ? capitalize(params.data.view)
         : "Home";
     // Add a switch case statement to handle multiple routes
     switch (view) {
@@ -53,6 +55,20 @@ router.hooks({
             done();
           })
           .catch(err => console.log(err));
+        break;
+      case "Pizza":
+        // New Axios get request utilizing already made environment variable
+        axios
+          .get(`${process.env.PIZZA_PLACE_API_URL}/pizzas`)
+          .then(response => {
+            console.log(response.data); // Storing retrieved data in state
+            store.Pizza.pizzas = response.data;
+            done();
+          })
+          .catch(error => {
+            console.log("It puked", error);
+            done();
+          });
         break;
       default:
         done();
