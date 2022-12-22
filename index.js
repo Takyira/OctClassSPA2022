@@ -16,14 +16,51 @@ ${Nav(store.Links)}
 ${Main(state)}
 ${Footer()}
 `;
-  afterRender();
+  afterRender(state);
   router.updatePageLinks();
 }
-function afterRender() {
+function afterRender(state) {
   // add menu toggle to bars icon in nav bar
   document.querySelector(".fa-bars").addEventListener("click", () => {
     document.querySelector("nav > ul").classList.toggle("hidden--mobile");
   });
+  if (state.view === "Order") {
+    document.querySelector("form").addEventListener("submit", event => {
+      event.preventDefault();
+
+      const inputList = event.target.elements;
+      console.log("Input Element List", inputList);
+
+      const toppings = [];
+      // Interate over the toppings input group elements
+      for (let input of inputList.toppings) {
+        // If the value of the checked attribute is true then add the value to the toppings array
+        if (input.checked) {
+          toppings.push(input.value);
+        }
+      }
+
+      const requestData = {
+        customer: inputList.customer.value,
+        crust: inputList.crust.value,
+        cheese: inputList.cheese.value,
+        sauce: inputList.sauce.value,
+        toppings: toppings
+      };
+      console.log("request Body", requestData);
+
+      axios
+        .post(`${process.env.PIZZA_PLACE_API_URL}/pizzas`, requestData)
+        .then(response => {
+          // Push the new pizza onto the Pizza state pizzas attribute, so it can be displayed in the pizza list
+          store.Pizza.pizzas.push(response.data);
+          router.navigate("/Pizza");
+        })
+        .catch(error => {
+          console.log("It puked", error);
+        });
+    });
+  }
 }
 
 router.hooks({
@@ -56,12 +93,14 @@ router.hooks({
           })
           .catch(err => console.log(err));
         break;
+      // New Case for Pizza View
       case "Pizza":
         // New Axios get request utilizing already made environment variable
         axios
           .get(`${process.env.PIZZA_PLACE_API_URL}/pizzas`)
           .then(response => {
-            console.log(response.data); // Storing retrieved data in state
+            // Storing retrieved data in state
+            console.log(response.data);
             store.Pizza.pizzas = response.data;
             done();
           })
